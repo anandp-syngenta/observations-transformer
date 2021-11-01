@@ -1,0 +1,51 @@
+plugins {
+    id 'scala'
+    id 'com.github.johnrengelman.shadow' version '7.1.0'
+    id 'com.palantir.docker' version '0.30.0'
+}
+
+repositories {
+    mavenCentral()
+}
+
+sourceCompatibility = 1.11
+targetCompatibility = 1.11
+
+ext {
+    scalaMajorVersion = '2.12'
+    scalaVersion = '2.12.15'
+    flinkVersion = '1.14.0'
+    kafkaVersion = '2.8.1'
+    jacksonVersion = '2.13.0'
+}
+
+dependencies {
+
+    implementation "org.scala-lang:scala-library:${scalaVersion}"
+    implementation "org.apache.flink:flink-streaming-scala_${scalaMajorVersion}:${flinkVersion}"
+    implementation "org.apache.flink:flink-connector-kafka_${scalaMajorVersion}:${flinkVersion}"
+    implementation "org.apache.kafka:kafka-clients:${kafkaVersion}"
+    implementation 'joda-time:joda-time:2.2'
+    implementation "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
+    implementation "com.google.code.gson:gson:2.8.9"
+    implementation "com.typesafe:config:1.4.1"
+    // implementation 'org.apache.flink:flink-clients_2.12:1.14.0'
+
+    // Use Munit for testing our library
+    testImplementation "org.scalameta:munit_${scalaMajorVersion}:0.7.29"
+    testImplementation "org.apache.flink:flink-test-utils_${scalaMajorVersion}:${flinkVersion}"
+
+}
+
+shadowJar {
+    archiveClassifier.set('')
+    manifest {
+        attributes 'Main-Class': 'org.syngenta.transformer.task.TransformerStreamTask'
+    }
+}
+
+docker {
+    name "${project.name}:${project.version}"
+    files shadowJar.outputs
+    copySpec.from("/build/libs").into("/opt/flink/lib")
+}
